@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -63,7 +64,7 @@ class QpsManager(
 
 @Configuration
 @ComponentScan("com.littleetx.extccserver")
-class TestFilter(private val qpsManager: QpsManager) : Filter {
+class QpsFilter(private val qpsManager: QpsManager) : Filter {
 
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
         if (request !is HttpServletRequest) {
@@ -83,6 +84,7 @@ class TestFilter(private val qpsManager: QpsManager) : Filter {
 }
 
 @Component
+@AutoConfigureAfter(QpsManager::class)
 class QpsManagerLinker(
     @Value("\${trainticket.qps.server.host:localhost}")
     host: String,
