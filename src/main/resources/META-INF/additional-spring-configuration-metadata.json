@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "trainticket.qps.limit",
+      "type": "java.lang.Integer",
+      "description": "The maximum number of queries per second for the train ticket service."
+    },
+    {
+      "name": "trainticket.qps.server.port",
+      "type": "java.lang.Integer",
+      "description": "The server port number for the decision maker service."
+    },
+    {
+        "name": "trainticket.qps.server.host",
+        "type": "java.lang.String",
+        "description": "The server host name for the decision maker service."
+    },
+    {
+        "name": "trainticket.qps.server.interval",
+        "type": "java.lang.Long",
+        "description": "The interval in milliseconds to update the qps info to the decision maker service."
+    }
+  ]
+}
