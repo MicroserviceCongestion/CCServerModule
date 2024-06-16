@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.littleetx"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -26,6 +26,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Jar> {
+    enabled = true
+    archiveClassifier = ""
 }
 
 
