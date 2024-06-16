@@ -1,5 +1,6 @@
 package com.littleetx.extccserver
 
+import com.sun.management.OperatingSystemMXBean
 import jakarta.servlet.Filter
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletRequest
@@ -15,29 +16,22 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
+import java.lang.management.ManagementFactory
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 
 @Component
-class QpsManager(
-    @Value("\${trainticket.qps.limit:100}")
-    private var _maxQps: Int,
-) {
-    private var _cnt = AtomicInteger(_maxQps)
+class QpsManager {
     private var _qps = AtomicInteger(0)
     private var logger = LoggerFactory.getLogger(QpsManager::class.java)
 
-    init {
-        logger.info("QpsManager init, default qps: $_maxQps")
-    }
+    final var maxQpsRate: Double = 1.0
 
-    var maxQps: Int
-        get() = _maxQps
-        set(value) {
-            _cnt.addAndGet(value - _maxQps)
-            _maxQps = value
-        }
+    init {
+        logger.info("QpsManager init, default qps rate: $maxQpsRate")
+    }
 
     val qps: Int
         get() = _qps.get()
@@ -48,16 +42,8 @@ class QpsManager(
             delay(1000)
             _qps.decrementAndGet()
         }
-        if (_cnt.getAndDecrement() > 0) {
-            launch {
-                delay(1000)
-                _cnt.incrementAndGet()
-            }
-            block(true)
-        } else {
-            _cnt.incrementAndGet()
-            block(false)
-        }
+        val canExecute = Random.nextDouble() < maxQpsRate
+        block(canExecute)
     }
 }
 
@@ -108,16 +94,16 @@ class QpsManagerLinker(
                         logger.warn("Invalid message from QpsManager server: $line")
                         continue
                     }
-                    if (parts[0] != "MaxQPS") {
+                    if (parts[0] != "MaxQpsRate") {
                         logger.warn("Unrecognized key: ${parts[0]}")
                         continue
                     }
-                    val qps = parts[1].toIntOrNull()
-                    if (qps == null) {
+                    val qpsRate = parts[1].toDoubleOrNull()
+                    if (qpsRate == null) {
                         logger.warn("Invalid qps from QpsManager server: ${parts[1]}")
                         continue
                     }
-                    qpsManager.maxQps = qps
+                    qpsManager.maxQpsRate = qpsRate
                 }
             } catch (e: Exception) {
                 logger.warn("Failed to read from QpsManager server")
@@ -128,7 +114,9 @@ class QpsManagerLinker(
                 val writer = getOutputStream().bufferedWriter()
                 while (true) {
                     Thread.sleep(interval)
+                    val bean = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
                     writer.write("QPS:${qpsManager.qps}\n")
+                    writer.write("CPU:${bean.cpuLoad}\n")
                     writer.flush()
                 }
             } catch (e: Exception) {
@@ -141,7 +129,7 @@ class QpsManagerLinker(
         try {
             Socket(host, port).handle()
         } catch (e: Exception) {
-            logger.warn("Failed to connect to QpsManager server, qps will be fixed to ${qpsManager.maxQps}")
+            logger.warn("Failed to connect to QpsManager server, max qps rate qps will be fixed to ${qpsManager.maxQpsRate}")
         }
     }
 }
