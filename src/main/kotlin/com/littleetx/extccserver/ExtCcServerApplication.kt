@@ -129,7 +129,7 @@ class QpsManagerLinker(
         try {
             Socket(host, port).handle()
         } catch (e: Exception) {
-            logger.warn("Failed to connect to QpsManager server, max qps rate qps will be fixed to ${qpsManager.maxQpsRate}")
+            logger.warn("Failed to connect to QpsManager server ${host}:${port}, max qps rate qps will be fixed to ${qpsManager.maxQpsRate}")
         }
     }
 }
